@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "adUZ8dLL6gKZK3aQZVUHTKs9Htf0ttdkqJQbSRBeBbnZp/S+q6AUc79A4w1zFBMWrxW8VrXB1nxnYMxaKjtIJg==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\WebDeveloper\\source\\repos\\IdentityServer4Configuration\\Cloudexis\\Cloudexis.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\WebDeveloper\\.nuget\\packages\\identitymodel\\5.1.0\\identitymodel.5.1.0.nupkg.sha512",
+    "C:\\Users\\WebDeveloper\\.nuget\\packages\\newtonsoft.json\\13.0.1\\newtonsoft.json.13.0.1.nupkg.sha512",
+    "C:\\Users\\WebDeveloper\\.nuget\\packages\\system.text.encodings.web\\5.0.1\\system.text.encodings.web.5.0.1.nupkg.sha512",
+    "C:\\Users\\WebDeveloper\\.nuget\\packages\\system.text.json\\5.0.1\\system.text.json.5.0.1.nupkg.sha512"
+  ],
+  "logs": []
+}
