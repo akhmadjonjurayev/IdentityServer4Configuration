@@ -2,3 +2,6 @@
 /Identihaus/bin
 /Cloudexis/bin
 /.vs
+/IdentityServer4Configuration/obj
+/Identihaus/obj
+/Cloudexis/obj
