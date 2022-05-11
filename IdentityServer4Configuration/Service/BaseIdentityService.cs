@@ -74,6 +74,7 @@ namespace IdentityServer4Configuration.Service
 
                 var user = new SysUsers
                 {
+                    PersonId = model.PersonId,
                     UserName = model.Username,
                     Email = model.Email,
                     PhoneNumber = model.PhoneNumber

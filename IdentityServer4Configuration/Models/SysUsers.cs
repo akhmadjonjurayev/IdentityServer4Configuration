@@ -8,6 +8,8 @@ namespace IdentityServer4Configuration.Models
 {
     public class SysUsers : IdentityUser<Guid>
     {
+        public Guid? PersonId { get; set; }
+
         public virtual ICollection<SysUserClaim> Claims { get; set; }
 
         public virtual ICollection<SysUserLogin> Logins { get; set; }
