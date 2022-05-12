@@ -594,5 +594,57 @@ namespace IdentityServer4Configuration.Controllers
                 Code = "success"
             };
         }
+
+        [HttpPost]
+        public async Task<JsonResponce> CreateSeedApiClient()
+        {
+            try
+            {
+                var client = new Client();
+                client.ClientUri = "https://localhost";
+                client.ClientId = "Crypto";
+                client.ClientName = "Crypto";
+                client.RedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
+                client.PostLogoutRedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
+                client.AllowedCorsOrigins = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
+                client.AllowAccessTokensViaBrowser = true;
+                client.AllowedScopes = new List<string>() { "Crypto", IdentityServerConstants.StandardScopes.OpenId, IdentityServerConstants.StandardScopes.Profile };
+                client.AllowedGrantTypes = new List<string>() { GrantType.ResourceOwnerPassword };
+                client.RequireClientSecret = false;
+                client.RequireConsent = false;
+                client.AccessTokenLifetime = 1200;
+
+                var webClient = new SysClientEntity
+                {
+                    ClientId = client.ClientId,
+                    Client = client
+                };
+                webClient.AddDataToEntity();
+                await _dB.SysClients.AddAsync(webClient);
+                _dB.SaveChanges();
+                return new JsonResponce { Success = true, Code = "success" };
+
+            }
+            catch(Exception ex)
+            {
+                return new JsonResponce() { Code = "error", Success = false, Message = ex.Message };
+            }
+        }
+
+        [HttpDelete]
+        public async Task<JsonResponce> DeleteApiCilent(string clientId)
+        {
+            try
+            {
+                var client = new SysClientEntity { ClientId = clientId };
+                _dB.Entry(client).State = EntityState.Deleted;
+                await _dB.SaveChangesAsync();
+                return new JsonResponce { Success = true, Code = "success" };
+            }
+            catch (Exception ex)
+            {
+                return new JsonResponce() { Code = "error", Success = false, Message = ex.Message };
+            }
+        }
     }
 }
