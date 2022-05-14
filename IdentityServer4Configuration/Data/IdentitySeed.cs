@@ -1,6 +1,7 @@
 ﻿using IdentityServer4;
 using IdentityServer4.Models;
 using IdentityServer4Configuration.Models;
+using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -9,9 +10,15 @@ namespace IdentityServer4Configuration.Data
     public class IdentitySeed
     {
         private readonly IdentityDB _identityDB;
-        public IdentitySeed(IdentityDB identityDB)
+        private readonly UserManager<SysUsers> _userManager;
+        private readonly RoleManager<SysRole> _roleManager;
+        public IdentitySeed(IdentityDB identityDB,
+            UserManager<SysUsers> userManager,
+            RoleManager<SysRole> roleManager)
         {
             this._identityDB = identityDB;
+            this._roleManager = roleManager;
+            this._userManager = userManager;
             SeedData();
         }
 
@@ -19,6 +26,22 @@ namespace IdentityServer4Configuration.Data
         {
             Dictionary<string, string> apis = new Dictionary<string, string>();
             apis.Add("Crypto", "Cryptography");
+
+            if(_identityDB.Users.Count() == 0)
+            {
+                var user = new SysUsers
+                {
+                    UserName = "kalinus",
+                    PersonId = System.Guid.Parse("5d09de05-2cf2-4037-a870-08da326b7122"),
+                    Email = "formyproject1999@gmail.com",
+                    PhoneNumber = "+998946644275"
+                };
+                _userManager.CreateAsync(user, "burgut").Wait();
+                _userManager.SetLockoutEnabledAsync(user, false).Wait();
+                _roleManager.CreateAsync(new SysRole { Name = "Administrator" });
+                _userManager.AddToRoleAsync(user, "Administrator");
+                _identityDB.SaveChanges();
+            }
 
             foreach (KeyValuePair<string, string> key in apis)
             {
@@ -46,29 +69,32 @@ namespace IdentityServer4Configuration.Data
             }
             _identityDB.SaveChanges();
 
-            var client = new Client();
-            client.ClientUri = "https://localhost";
-            client.ClientId = "Crypto";
-            client.ClientName = "Crypto";
-            client.RedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
-            client.PostLogoutRedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
-            client.AllowedCorsOrigins = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
-            client.AllowAccessTokensViaBrowser = true;
-            client.AllowedScopes = new List<string>() { IdentityServerConstants.StandardScopes.OpenId, IdentityServerConstants.StandardScopes.Profile };
-            foreach(var scope in apis)
-                client.AllowedScopes.Add(scope.Key);
-            client.AllowedGrantTypes = new List<string>() { GrantType.ResourceOwnerPassword };
-            client.RequireClientSecret = false;
-            client.RequireConsent = false;
-            client.AccessTokenLifetime = 1200;
-
-            var webClient = new SysClientEntity
+            if(_identityDB.SysClients.Count() == 0)
             {
-                ClientId = client.ClientId,
-                Client = client
-            };
-            webClient.AddDataToEntity();
-            _identityDB.SysClients.Add(webClient);
+                var client = new Client();
+                client.ClientUri = "https://localhost";
+                client.ClientId = "Crypto";
+                client.ClientName = "Crypto";
+                client.RedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
+                client.PostLogoutRedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
+                client.AllowedCorsOrigins = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
+                client.AllowAccessTokensViaBrowser = true;
+                client.AllowedScopes = new List<string>() { IdentityServerConstants.StandardScopes.OpenId, IdentityServerConstants.StandardScopes.Profile };
+                foreach (var scope in apis)
+                    client.AllowedScopes.Add(scope.Key);
+                client.AllowedGrantTypes = new List<string>() { GrantType.ResourceOwnerPassword };
+                client.RequireClientSecret = false;
+                client.RequireConsent = false;
+                client.AccessTokenLifetime = 1200;
+
+                var webClient = new SysClientEntity
+                {
+                    ClientId = client.ClientId,
+                    Client = client
+                };
+                webClient.AddDataToEntity();
+                _identityDB.SysClients.Add(webClient);
+            }
 
             _identityDB.SaveChanges();
         }

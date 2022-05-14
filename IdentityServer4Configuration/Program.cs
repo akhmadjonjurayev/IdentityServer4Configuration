@@ -21,6 +21,7 @@ namespace IdentityServer4Configuration
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
+                    webBuilder.UseUrls("https://localhost:9001");
                 });
     }
 }

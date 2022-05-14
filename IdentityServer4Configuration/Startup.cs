@@ -84,7 +84,16 @@ namespace IdentityServer4Configuration
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "IdentityServer4Configuration", Version = "v1" });
             });
 
-            services.AddDbContext<IdentityDB>(option => option.UseSqlServer(Configuration.GetConnectionString("MyConnection")));
+            services.AddDbContext<IdentityDB>(option =>
+            {
+                var environmnet = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                if (environmnet == "Home")
+                {
+                    option.UseSqlServer(Configuration.GetConnectionString("MyConnection"));
+                }
+                else
+                    option.UseSqlServer(Configuration.GetConnectionString("MyConnection"));
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

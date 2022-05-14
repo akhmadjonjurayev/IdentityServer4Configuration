@@ -17,7 +17,8 @@ namespace IdentityServer4Configuration.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.HasDefaultSchema("identity");
+            //builder.HasDefaultSchema("identity");
+            //builder.HasDefaultSchema("dbo");
             builder.Entity<SysUsers>(b =>
             {
                 b.HasMany(e => e.Claims)
