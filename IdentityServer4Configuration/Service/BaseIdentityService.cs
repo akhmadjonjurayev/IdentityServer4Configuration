@@ -382,5 +382,17 @@ namespace IdentityServer4Configuration.Service
                 Data = Database.Users
             };
         }
+
+        public async Task<JsonResponce> SignInWithCertificate(LoginViewModel viewModel)
+        {
+            try
+            {
+
+            }
+            catch(Exception ex)
+            {
+                return new JsonResponce { Success = false, Message = ex.Message, Code = "error" };
+            }
+        }
     }
 }
