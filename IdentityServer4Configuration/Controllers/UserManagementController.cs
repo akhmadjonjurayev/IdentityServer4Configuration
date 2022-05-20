@@ -1,5 +1,9 @@
-﻿using IdentityServer4Configuration.Service;
+﻿using IdentityServer4.Configuration;
+using IdentityServer4.Services;
+using IdentityServer4Configuration.Models;
+using IdentityServer4Configuration.Service;
 using IdentityServer4Configuration.ViewModel;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -53,6 +57,26 @@ namespace IdentityServer4Configuration.Controllers
         public JsonResponce GetUsers()
         {
             return _baseIdentityService.GetUsers();
+        }
+
+        [HttpPost]
+        public async Task<JsonResponce> SignInWithCertificate([FromBody] LoginViewModel model)
+        {
+            return await _baseIdentityService.SignInWithCertificate(model);
+        }
+
+        [HttpPost]
+        public async Task<JsonResponce> Check([FromBody]SignInViewModel viewModel)
+        {
+            return await _baseIdentityService.CheckMethod(viewModel);
+        }
+
+        [HttpPost]
+        public async Task<JsonResponce> LoginAs(System.Guid id, [FromServices] ITokenService TS,
+    [FromServices] IUserClaimsPrincipalFactory<SysUsers> principalFactory,
+    [FromServices] IdentityServerOptions options)
+        {
+            return await _baseIdentityService.LoginAs(TS, principalFactory, options, id);
         }
     }
 }

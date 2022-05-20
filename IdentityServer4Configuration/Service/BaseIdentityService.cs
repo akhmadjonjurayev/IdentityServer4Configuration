@@ -1,4 +1,11 @@
-﻿using IdentityServer4Configuration.Data;
+﻿using Grpc.Net.Client;
+using IdentityPage.Properties;
+using IdentityServer4;
+using IdentityServer4.Configuration;
+using IdentityServer4.Models;
+using IdentityServer4.Services;
+using IdentityServer4.Validation;
+using IdentityServer4Configuration.Data;
 using IdentityServer4Configuration.Models;
 using IdentityServer4Configuration.ViewModel;
 using Microsoft.AspNetCore.Identity;
@@ -6,8 +13,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace IdentityServer4Configuration.Service
@@ -16,6 +24,7 @@ namespace IdentityServer4Configuration.Service
     {
         public UserManager<SysUsers> UserManager { get; }
         public IdentityDB Database { get; }
+        private readonly IdentityServerTools _tools;
 
         public SignInManager<SysUsers> SignInManager { get; }
         public RoleManager<SysRole> RoleManager { get; }
@@ -23,8 +32,10 @@ namespace IdentityServer4Configuration.Service
         public IConfiguration Configuration { get; }
         public BaseIdentityService(IdentityDB database, UserManager<SysUsers> userManager,
             SignInManager<SysUsers> signInManager,
-            RoleManager<SysRole> roleManager, ILogger<BaseIdentityService> logger, IConfiguration configuration)
+            RoleManager<SysRole> roleManager, ILogger<BaseIdentityService> logger, IConfiguration configuration,
+            IdentityServerTools tools)
         {
+            this._tools = tools;
             UserManager = userManager;
             Database = database;
             SignInManager = signInManager;
@@ -387,12 +398,77 @@ namespace IdentityServer4Configuration.Service
         {
             try
             {
+                using var channel = GrpcChannel.ForAddress("http://localhost:7000");
+                var grpcClient = new Crypto.CryptoClient(channel);
+                var result = await grpcClient.GetCertificateBySerialNumberAsync(new SerialNumber { SerialNumber_ = viewModel.SerialNumber });
+                var user = await Database.Users.FirstOrDefaultAsync(l => l.PersonId == Guid.Parse(result.PersonId));
+                using var certificate = new X509Certificate2(Convert.FromBase64String(result.SertificateBase64));
+                using var rsa = certificate.GetRSAPublicKey();
+                var check = rsa.VerifyData(Encoding.UTF8.GetBytes(viewModel.ForSignData), Convert.FromBase64String(viewModel.Signature),
+                    System.Security.Cryptography.HashAlgorithmName.MD5, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+                if(check)
+                {
+                    await SignInManager.SignInAsync(user, false);
+                    return new JsonResponce { Success = true, Code = "success" };
+                }
+                return new JsonResponce { Success = false, Code = "error" };
 
             }
             catch(Exception ex)
             {
                 return new JsonResponce { Success = false, Message = ex.Message, Code = "error" };
             }
+        }
+
+        public async Task<JsonResponce> CheckMethod(SignInViewModel viewModel)
+        {
+            try
+            {
+                var user = await Database.Users.FirstOrDefaultAsync(l => l.UserName == viewModel.Username);
+                if (user == null)
+                    return new JsonResponce { Success = false, Code = "error" };
+                var userClaims = await UserManager.GetClaimsAsync(user);
+                var token = await _tools.IssueJwtAsync(3600, "http://localhost:9001", userClaims);
+                return new JsonResponce { Success = true, Message = token };
+            }
+            catch(Exception ex)
+            {
+                return new JsonResponce { Success = false, Message = ex.Message };
+            }
+        }
+
+        public async Task<JsonResponce> LoginAs(ITokenService TS, IUserClaimsPrincipalFactory<SysUsers> principalFactory,
+            IdentityServerOptions options, Guid id)
+        {
+            var Request = new TokenCreationRequest();
+            var User = await Database.SysUsers.FirstOrDefaultAsync(l => l.Id == id);
+            var IdentityPricipal = await principalFactory.CreateAsync(User);
+            var IdentityUser = new IdentityServerUser(User.Id.ToString());
+            IdentityUser.AdditionalClaims = IdentityPricipal.Claims.ToArray();
+            IdentityUser.DisplayName = User.UserName;
+            IdentityUser.AuthenticationTime = System.DateTime.UtcNow;
+            IdentityUser.IdentityProvider = IdentityServerConstants.LocalIdentityProvider;
+            Request.Subject = IdentityUser.CreatePrincipal();
+            Request.IncludeAllIdentityClaims = true;
+            Request.ValidatedRequest = new ValidatedRequest();
+            Request.ValidatedRequest.Subject = Request.Subject;
+            var client = await Database.SysClients.FirstOrDefaultAsync(l => l.ClientId == "Crypto");
+            client.MapDataFromEntity();
+            Request.ValidatedRequest.SetClient(client.Client);
+            var identityResource = await Database.SysIdentityResources.ToListAsync();
+            identityResource.ForEach(re => re.MapDataFromEntity());
+            var apiResource = await Database.SysApiResources.ToListAsync();
+            apiResource.ForEach(re => re.MapDataFromEntity());
+            var scopes = await Database.SysApiScopes.ToListAsync();
+            scopes.ForEach(re => re.MapDataFromEntity());
+            Request.ValidatedResources = new ResourceValidationResult(new Resources(identityResource.Select(l => l.IdentityResource),
+                apiResource.Select(l => l.ApiResource), scopes.Select(l => l.ApiScope)));
+            Request.ValidatedRequest.Options = options;
+            Request.ValidatedRequest.ClientClaims = IdentityUser.AdditionalClaims;
+            var Token = await TS.CreateAccessTokenAsync(Request);
+            Token.Issuer = "https://localhost:9001";
+            var TokenValue = await TS.CreateSecurityTokenAsync(Token);
+            return new JsonResponce { Success = true, Code = "Success", Data = TokenValue };
         }
     }
 }

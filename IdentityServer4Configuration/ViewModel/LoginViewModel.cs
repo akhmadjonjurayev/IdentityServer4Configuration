@@ -4,6 +4,8 @@
     {
         public string SerialNumber { get; set; }
 
-        public string SignData { get; set; }
+        public string ForSignData { get; set; }
+
+        public string Signature { get; set; }
     }
 }

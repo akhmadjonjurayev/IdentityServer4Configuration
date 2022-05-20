@@ -18,6 +18,7 @@ using IdentityServer4Configuration.Models;
 using IdentityServer4Configuration.Service;
 using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http;
 
 namespace IdentityServer4Configuration
 {
@@ -49,6 +50,7 @@ namespace IdentityServer4Configuration
             });
 
             services.AddScoped<IBaseIdentityService, BaseIdentityService>();
+            //services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IClientStore, ClientStore>();
             services.AddTransient<IResourceStore, ResourceStore>();
             services.AddIdentity<SysUsers, SysRole>(o =>
