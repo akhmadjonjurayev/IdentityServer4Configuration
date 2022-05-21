@@ -9,6 +9,7 @@ using IdentityServer4Configuration.Data;
 using IdentityServer4Configuration.Models;
 using IdentityServer4Configuration.ViewModel;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,9 @@ namespace IdentityServer4Configuration.Service
         public UserManager<SysUsers> UserManager { get; }
         public IdentityDB Database { get; }
         private readonly IdentityServerTools _tools;
-
+        private readonly ITokenService TS;
+        private readonly IUserClaimsPrincipalFactory<SysUsers> principalFactory;
+        private readonly IdentityServerOptions options;
         public SignInManager<SysUsers> SignInManager { get; }
         public RoleManager<SysRole> RoleManager { get; }
         public ILogger<BaseIdentityService> Logger { get; }
@@ -33,7 +36,8 @@ namespace IdentityServer4Configuration.Service
         public BaseIdentityService(IdentityDB database, UserManager<SysUsers> userManager,
             SignInManager<SysUsers> signInManager,
             RoleManager<SysRole> roleManager, ILogger<BaseIdentityService> logger, IConfiguration configuration,
-            IdentityServerTools tools)
+            IdentityServerTools tools, ITokenService tokenService,
+            IUserClaimsPrincipalFactory<SysUsers> PrincipalFactory, IdentityServerOptions Options)
         {
             this._tools = tools;
             UserManager = userManager;
@@ -42,6 +46,9 @@ namespace IdentityServer4Configuration.Service
             RoleManager = roleManager;
             Logger = logger;
             Configuration = configuration;
+            this.TS = tokenService;
+            this.principalFactory = PrincipalFactory;
+            this.options = Options;
         }
         public async Task<JsonResponce> CreateUserAsync(CreateUserViewModel model)
         {
@@ -408,8 +415,9 @@ namespace IdentityServer4Configuration.Service
                     System.Security.Cryptography.HashAlgorithmName.MD5, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
                 if(check)
                 {
-                    await SignInManager.SignInAsync(user, false);
-                    return new JsonResponce { Success = true, Code = "success" };
+                    await SignInManager.SignInAsync(user, true);
+                    var token = await GetTokenByUserId(user.Id, TS, principalFactory, options);
+                    return new JsonResponce { Success = true, Code = "success", Data = token };
                 }
                 return new JsonResponce { Success = false, Code = "error" };
 
@@ -469,6 +477,40 @@ namespace IdentityServer4Configuration.Service
             Token.Issuer = "https://localhost:9001";
             var TokenValue = await TS.CreateSecurityTokenAsync(Token);
             return new JsonResponce { Success = true, Code = "Success", Data = TokenValue };
+        }
+
+        private async Task<string> GetTokenByUserId(Guid id, ITokenService TS, IUserClaimsPrincipalFactory<SysUsers> principalFactory,
+            IdentityServerOptions options)
+        {
+            var Request = new TokenCreationRequest();
+            var User = await Database.SysUsers.FirstOrDefaultAsync(l => l.Id == id);
+            var IdentityPricipal = await principalFactory.CreateAsync(User);
+            var IdentityUser = new IdentityServerUser(User.Id.ToString());
+            IdentityUser.AdditionalClaims = IdentityPricipal.Claims.ToArray();
+            IdentityUser.DisplayName = User.UserName;
+            IdentityUser.AuthenticationTime = DateTime.UtcNow;
+            IdentityUser.IdentityProvider = IdentityServerConstants.LocalIdentityProvider;
+            Request.Subject = IdentityUser.CreatePrincipal();
+            Request.IncludeAllIdentityClaims = true;
+            Request.ValidatedRequest = new ValidatedRequest();
+            Request.ValidatedRequest.Subject = Request.Subject;
+            var client = await Database.SysClients.FirstOrDefaultAsync(l => l.ClientId == "Crypto");
+            client.MapDataFromEntity();
+            Request.ValidatedRequest.SetClient(client.Client);
+            var identityResource = await Database.SysIdentityResources.ToListAsync();
+            identityResource.ForEach(re => re.MapDataFromEntity());
+            var apiResource = await Database.SysApiResources.ToListAsync();
+            apiResource.ForEach(re => re.MapDataFromEntity());
+            var scopes = await Database.SysApiScopes.ToListAsync();
+            scopes.ForEach(re => re.MapDataFromEntity());
+            Request.ValidatedResources = new ResourceValidationResult(new Resources(identityResource.Select(l => l.IdentityResource),
+                apiResource.Select(l => l.ApiResource), scopes.Select(l => l.ApiScope)));
+            Request.ValidatedRequest.Options = options;
+            Request.ValidatedRequest.ClientClaims = IdentityUser.AdditionalClaims;
+            var Token = await TS.CreateAccessTokenAsync(Request);
+            Token.Issuer = "https://localhost:9001";
+            var TokenValue = await TS.CreateSecurityTokenAsync(Token);
+            return TokenValue;
         }
     }
 }
