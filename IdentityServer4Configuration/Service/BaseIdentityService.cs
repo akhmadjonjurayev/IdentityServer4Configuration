@@ -9,7 +9,6 @@ using IdentityServer4Configuration.Data;
 using IdentityServer4Configuration.Models;
 using IdentityServer4Configuration.ViewModel;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -411,9 +410,9 @@ namespace IdentityServer4Configuration.Service
                 var user = await Database.Users.FirstOrDefaultAsync(l => l.PersonId == Guid.Parse(result.PersonId));
                 using var certificate = new X509Certificate2(Convert.FromBase64String(result.SertificateBase64));
                 using var rsa = certificate.GetRSAPublicKey();
-                var check = rsa.VerifyData(Encoding.UTF8.GetBytes(viewModel.ForSignData), Convert.FromBase64String(viewModel.Signature),
+                var verifySign = rsa.VerifyData(Encoding.UTF8.GetBytes(viewModel.ForSignData), Convert.FromBase64String(viewModel.Signature),
                     System.Security.Cryptography.HashAlgorithmName.MD5, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
-                if(check)
+                if(verifySign)
                 {
                     await SignInManager.SignInAsync(user, true);
                     var token = await GetTokenByUserId(user.Id, TS, principalFactory, options);
