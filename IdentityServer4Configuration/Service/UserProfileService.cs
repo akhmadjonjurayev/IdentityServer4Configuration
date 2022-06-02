@@ -40,6 +40,7 @@ namespace IdentityServer4Configuration.Service
             claims = claims.Where(claim => context.RequestedClaimTypes.Contains(claim.Type)).ToList();
 
             claims.Add(new Claim(JwtClaimTypes.GivenName, user.UserName));
+            claims.Add(new Claim("personId", user.PersonId.ToString()));
 
             IList<string> roleNames = await _userManager.GetRolesAsync(user);
             if (roleNames != null && roleNames.Count > 0)
