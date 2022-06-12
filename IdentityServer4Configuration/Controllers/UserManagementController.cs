@@ -17,7 +17,7 @@ namespace IdentityServer4Configuration.Controllers
 
         public UserManagementController(IBaseIdentityService baseIdentityService)
         {
-            this._baseIdentityService = baseIdentityService;     
+            this._baseIdentityService = baseIdentityService;
         }
         #region CreateUser
         [HttpPost]

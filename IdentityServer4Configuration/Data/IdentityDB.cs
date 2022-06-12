@@ -2,9 +2,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace IdentityServer4Configuration.Data
 {
@@ -17,8 +14,6 @@ namespace IdentityServer4Configuration.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            //builder.HasDefaultSchema("identity");
-            //builder.HasDefaultSchema("dbo");
             builder.Entity<SysUsers>(b =>
             {
                 b.HasMany(e => e.Claims)
