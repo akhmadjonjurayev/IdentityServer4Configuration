@@ -90,12 +90,6 @@ namespace IdentityServer4Configuration
             {
                 var environmnet = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
                 option.UseInMemoryDatabase("identityDb");
-                //if (environmnet == "Home")
-                //{
-                //    option.UseSqlServer(Configuration.GetConnectionString("MyConnection"));
-                //}
-                //else
-                //    option.UseSqlServer(Configuration.GetConnectionString("MyConnection"));
             });
         }
 
