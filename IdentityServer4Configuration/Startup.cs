@@ -104,7 +104,7 @@ namespace IdentityServer4Configuration
             }
 
             app.UseHttpsRedirection();
-
+            app.UseStaticFiles("/wwwroot");
             app.UseRouting();
             app.UseCors("default");
             app.UseIdentityServer();

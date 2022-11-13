@@ -20,11 +20,11 @@ document.getElementById("logout").addEventListener("click", logout, false);
 
 var config = {
     authority: "https://localhost:9001",
-    client_id: "js",
-    redirect_uri: "https://localhost:9001/callback.html",
+    client_id: "crypto",
+    redirect_uri: "http://localhost:5000/wwwroot/callback.html",
     response_type: "code",
-    scope:"openid profile api1",
-    post_logout_redirect_uri : "https://localhost:9001/wwwroot/index.html",
+    scope:"openid profile crypto",
+    post_logout_redirect_uri : "http://localhost:5000/wwwroot/index.html",
 };
 var mgr = new Oidc.UserManager(config);
 

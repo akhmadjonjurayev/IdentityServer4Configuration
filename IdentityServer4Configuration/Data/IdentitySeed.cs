@@ -25,7 +25,7 @@ namespace IdentityServer4Configuration.Data
         public void SeedData()
         {
             Dictionary<string, string> apis = new Dictionary<string, string>();
-            apis.Add("Crypto", "Cryptography");
+            apis.Add("crypto", "cryptography");
 
             if(_identityDB.Users.Count() == 0)
             {
@@ -41,6 +41,27 @@ namespace IdentityServer4Configuration.Data
                 _roleManager.CreateAsync(new SysRole { Name = "Administrator" });
                 _userManager.AddToRoleAsync(user, "Administrator");
                 _identityDB.SaveChanges();
+            }
+
+            List<IdentityResource> identityResources = new List<IdentityResource>();
+            identityResources.Add(new IdentityResources.Address());
+            identityResources.Add(new IdentityResources.Email());
+            identityResources.Add(new IdentityResources.OpenId());
+            identityResources.Add(new IdentityResources.Phone());
+            identityResources.Add(new IdentityResources.Profile());
+
+            foreach (var resource in identityResources)
+            {
+                if (!_identityDB.SysIdentityResources.Any(r => r.IdentityResourceName == resource.Name))
+                {
+                    resource.UserClaims.Add("name");
+                    resource.UserClaims.Add("email");
+                    SysIdentityResourceEntity identityResourceEntity = new SysIdentityResourceEntity();
+                    identityResourceEntity.IdentityResource = resource;
+                    identityResourceEntity.IdentityResourceName = identityResourceEntity.IdentityResource.Name;
+                    identityResourceEntity.AddDataToEntity();
+                    _identityDB.SysIdentityResources.Add(identityResourceEntity);
+                }
             }
 
             foreach (KeyValuePair<string, string> key in apis)
@@ -72,17 +93,17 @@ namespace IdentityServer4Configuration.Data
             if(_identityDB.SysClients.Count() == 0)
             {
                 var client = new Client();
-                client.ClientUri = "https://localhost";
-                client.ClientId = "Crypto";
+                client.ClientUri = "http://localhost:5000";
+                client.ClientId = "crypto";
                 client.ClientName = "Crypto";
-                client.RedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
+                client.RedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000", "http://localhost:5000/wwwroot/callback.html" };
                 client.PostLogoutRedirectUris = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
-                client.AllowedCorsOrigins = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000" };
+                client.AllowedCorsOrigins = new List<string>() { "https://localhost:7001", "http://localhost:7000", "https://localhost:5001", "http://localhost:5000", "https://localhost:5042" };
                 client.AllowAccessTokensViaBrowser = true;
                 client.AllowedScopes = new List<string>() { IdentityServerConstants.StandardScopes.OpenId, IdentityServerConstants.StandardScopes.Profile };
                 foreach (var scope in apis)
                     client.AllowedScopes.Add(scope.Key);
-                client.AllowedGrantTypes = new List<string>() { GrantType.ResourceOwnerPassword };
+                client.AllowedGrantTypes = new List<string>() { GrantType.AuthorizationCode, GrantType.ClientCredentials, GrantType.ResourceOwnerPassword };
                 client.RequireClientSecret = false;
                 client.RequireConsent = false;
                 client.AccessTokenLifetime = 1200;

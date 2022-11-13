@@ -26,13 +26,4 @@
     </Protobuf>
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="OpenIdServer.mdf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="OpenIdServer_log.ldf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

@@ -224,7 +224,11 @@ namespace IdentityServer4Configuration.Service
                 if (signInResult.Succeeded)
                 {
                     Logger.LogInformation("User successfully logged in!");
-
+                    var user = await Database.Users.FirstOrDefaultAsync(l => l.UserName == model.Username);
+                    if(user != null)
+                    {
+                        await SignInManager.SignInAsync(user, true);
+                    }
                     return new JsonResponce
                     {
                         Message = "User successfully logged in!",
