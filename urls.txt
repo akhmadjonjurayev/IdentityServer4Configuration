@@ -1,0 +1,3 @@
+https://www.codeproject.com/Articles/5162436/Simple-SignalR-Server-and-Client-Applications-Demo -> Windows formga signalR qo'shish
+https://developpaper.com/winform-uses-signalr-as-a-server/ -> Windows formga signalR qo'shish
+https://stackoverflow.com/questions/10200910/creating-a-hello-world-websocket-example -> console.log('asda')
